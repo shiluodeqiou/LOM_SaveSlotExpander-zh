@@ -77,41 +77,65 @@ BepInEx 5 不能用。`BepInEx\core\BepInEx.Unity.Mono.dll` 存在就是 6 系�
 
 ## 安装
 
-**只要两步，不需要事先装任何东西。**
+### 推荐：双击安装程序
 
 1. 从 [Releases](https://github.com/shiluodeqiou/LOM_SaveSlotExpander-zh/releases) 下载最新版的 zip
-2. 在 Steam 库里右键《活侠传》→ 管理 → 浏览本地文件，打开游戏根目录（`Mortal.exe` 所在的那层），
-   把压缩包里的**全部内容**解压进去，与原文件夹合并、提示覆盖就选覆盖
+2. 把压缩包**解压到任意位置**（桌面、下载文件夹都行，不用特意找游戏目录）
+3. 打开解压出来的文件夹，双击 **`点我安装.bat`**
 
-装好后应当是这个样子：
+安装程序会自己找到《活侠传》并复制文件，成功后显示「安装完成，检查通过」。
+找不到游戏时它会告诉你怎么办（把游戏文件夹拖到那个 bat 上即可）。
+
+### 手工安装的话，注意这些文件缺一不可
+
+打开压缩包，**把里面的文件全部**拖进游戏根目录（Steam 库里右键游戏 → 管理 → 浏览本地文件）。
+
+> **⚠️ 不要只复制 `BepInEx` 文件夹。**
+> 除了它，根目录下还有 `winhttp.dll`、`doorstop_config.ini`、`.doorstop_version`、`changelog.txt`
+> 这几个文件，它们才是让游戏加载 BepInEx 的入口。少了 `winhttp.dll`，
+> 游戏启动时根本不会碰 BepInEx，表现就是「装了什么反应都没有」。
+>
+> 同样，也不要用「解压到 `LOM_SaveSlotExpander-zh-v<版本>`」这种会新建子文件夹的方式，
+> 否则文件会落在子文件夹里，游戏读不到。
+
+手工装好后，游戏根目录应当是这个样子：
 
 ```
 LegendOfMortal/
 ├── Mortal.exe
-├── winhttp.dll                                  ← 随包附带
-├── doorstop_config.ini                          ← 随包附带
-├── .doorstop_version                            ← 随包附带
+├── winhttp.dll                                  ← 必须
+├── doorstop_config.ini                          ← 必须
+├── .doorstop_version                            ← 必须
+├── changelog.txt
 └── BepInEx/
-    ├── core/                                    ← 随包附带（BepInEx 运行时本体）
+    ├── core/                                    ← BepInEx 运行时本体
     └── plugins/
         └── LOM_SaveSlotExpander/
             └── LOM_SaveSlotExpander.dll
 ```
 
-3. 启动游戏（首次启动会生成设置文件）
+4. 启动游戏（首次启动会生成设置文件）
 
 压缩包里还附了 `安装说明.txt` 和 `第三方组件与许可.txt`，同样的内容。
+
+### 怎么确认装上了
+
+游戏启动一次后，看 `BepInEx\LogOutput.log`，里面有这一行就说明成功了：
+
+```
+[LOM 存档位扩展（汉化版）] 读档界面实际生成存档位 100 个
+```
 
 ### 关于里面自带的 BepInEx
 
 包里已经带好了 **BepInEx 6（Unity Mono 版，`6.0.0-be.692`）以及 Doorstop 4.3.0**，
-所以就算你之前一个 mod 都没装过，解压完也能直接玩，不用再去别处下载。
+所以就算你之前一个 mod 都没装过，装完也能直接玩，不用再去别处下载。
 包内文件与官方 BepInEx 发布包一一对应，一个不缺。
 
 - **已经装过 BepInEx 的用户**：直接覆盖一般没问题；如果你那份比包里的新，
-  建议只解压 `BepInEx\plugins` 这一部分，免得把新版换成旧版。
-- **装其它 mod**：互不影响。各家插件各自放在 `BepInEx\plugins` 下自己的文件夹里，
-  继续往 `BepInEx\plugins` 里解压即可。
+  建议只处理 `BepInEx\plugins` 这部分，免得把新版换成旧版。
+- **装其它 mod**：互不影响。各家插件各自放在 `BepInEx\plugins` 下自己的文件夹里。
+  安装程序也只动本 mod 的文件和 BepInEx 自身，不会碰 `BepInEx\config` 和别人的插件。
 - BepInEx 与 Doorstop 是 LGPL-2.1 授权的第三方组件，许可原文放在包里的
   `第三方许可\` 文件夹，来源见 `第三方组件与许可.txt`。
 

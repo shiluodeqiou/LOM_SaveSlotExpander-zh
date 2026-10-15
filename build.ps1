@@ -263,7 +263,15 @@ if ($Package) {
     New-Item -ItemType Directory -Path $stagePlugin -Force | Out-Null
     Copy-Item $outDll -Destination $stagePlugin -Force
 
-    # 3) 第三方组件的许可（BepInEx 与 Doorstop 都是 LGPL-2.1，随包分发必须带上）
+    # 3) 一键安装程序。放在压缩包最外层，用户解压到哪都能双击运行
+    $installerDir = Join-Path $repo "tools\installer"
+    foreach ($f in @("点我安装.bat", "install.ps1")) {
+        $src = Join-Path $installerDir $f
+        if (-not (Test-Path $src)) { throw "找不到安装程序文件: $src" }
+        Copy-Item $src -Destination $stage -Force
+    }
+
+    # 4) 第三方组件的许可（BepInEx 与 Doorstop 都是 LGPL-2.1，随包分发必须带上）
     $licDir = Join-Path $stage "第三方许可"
     New-Item -ItemType Directory -Path $licDir -Force | Out-Null
     foreach ($lic in @("BepInEx-LICENSE.txt", "Doorstop-LICENSE.txt")) {
@@ -287,41 +295,72 @@ if ($Package) {
 LOM 存档位扩展（汉化版） $version
 《活侠传》存档位 20 → 999，并且可以给每个存档位写中文注释
 
-【安装】只要两步
-1. 在 Steam 库里右键《活侠传》→ 管理 → 浏览本地文件，打开游戏根目录
-   （就是 Mortal.exe 所在的那个文件夹）
-2. 把本压缩包的**全部内容**解压进去，与原文件夹合并、提示覆盖就选覆盖
+===============================================================
+【安装】推荐做法：解压到任意位置，然后双击「点我安装.bat」
+===============================================================
 
-解压后应当出现下面这些文件，这就是装对了：
+1. 把本压缩包解压到**任意位置**（桌面、下载文件夹都行，不用特意找游戏目录）
+2. 打开解压出来的文件夹，双击「点我安装.bat」
+3. 安装程序会自己找到《活侠传》并复制文件，成功后窗口里会显示
+   「安装完成，检查通过」
+
+就这么简单。找不到游戏时它会告诉你怎么办（把游戏文件夹拖到那个 bat 上即可）。
+
+---------------------------------------------------------------
+【另一种做法】手工解压到游戏目录
+---------------------------------------------------------------
+
+在 Steam 库里右键《活侠传》→ 管理 → 浏览本地文件，打开游戏根目录
+（就是 Mortal.exe 所在的那个文件夹），然后：
+
+打开本压缩包，**把里面的文件拖进游戏根目录**（或者全选复制过去）。
+注意不要用「解压到 LOM_SaveSlotExpander-zh-v$version」这种会新建子文件夹的方式，
+否则文件会落在子文件夹里，游戏读不到。
+
+手工做对之后，游戏根目录下应当有：
 
     winhttp.dll
     doorstop_config.ini
+    .doorstop_version
     BepInEx\core\BepInEx.Unity.Mono.Preloader.dll
     BepInEx\plugins\LOM_SaveSlotExpander\LOM_SaveSlotExpander.dll
 
 【关于 BepInEx】
 本包已经自带 BepInEx 运行时（BepInEx $bepVer / Doorstop $doorstopVer，LGPL-2.1），
-所以就算你之前什么 mod 都没装过，解压完也能直接玩。不需要再去别处下载。
+所以就算你之前什么 mod 都没装过，装完也能直接玩。不需要再去别处下载。
 
 如果你已经装过 BepInEx，直接覆盖一般也没问题。但假如你那份比本包里的新，
-建议只解压 BepInEx\plugins 这个文件夹，免得把新版换成旧版。
+可以只处理 BepInEx\plugins 这部分，免得把新版换成旧版。
 
-其它 mod 互不影响：各家的插件各自放在 BepInEx\plugins 下自己的文件夹里，
-安装新 mod 时继续往 BepInEx\plugins 里解压即可。
+其它 mod 互不影响：各家插件各自放在 BepInEx\plugins 下自己的文件夹里，
+安装新 mod 时继续往 BepInEx\plugins 里放即可。安装程序也只动本 mod 的文件和
+BepInEx 自身，不会碰 BepInEx\config 和别人的插件。
 
-【用法】
-打开存档或读档界面，把鼠标移到（或用光标选中）存档位上：
-    F2    写注释，Enter 确定 / Esc 取消
-    F3    在「按编号」与「按存档时间」之间切换排序
+===============================================================
+【用法】记两个键就够
+===============================================================
+
+打开存档或读档界面，把鼠标移到（或用光标选中）一个存档位上：
+
+    F2    写 / 修改这个存档位的注释
+    F3    切换排序：按存档位编号 ↔ 按存档时间从新到旧
+
+注释框弹出来之后，Enter 是确定，Esc 是取消（框里也写着，不用特意记）。
+
+【安装成功了吗】
+游戏启动一次后，看 BepInEx\LogOutput.log 里有没有这一行：
+
+    读档界面实际生成存档位 100 个
+
+有就说明装好了。这是设置里填的数字之外的、真正生效的证据。
 
 【设置】
 BepInEx\config\lom.zh.saveslotexpander.cfg，首次启动游戏后生成。
 注释内容存在存档文件夹里的 SaveSlotComments.ini，可以用文本编辑器直接改。
 
 【卸载】
-只删 BepInEx\plugins\LOM_SaveSlotExpander 文件夹，不影响存档，
-其它 mod 也照常。想彻底清掉 BepInEx 的话再删 BepInEx 文件夹、winhttp.dll、
-doorstop_config.ini、.doorstop_version。
+删掉 BepInEx\plugins\LOM_SaveSlotExpander 文件夹即可，不影响存档，其它 mod 也照常。
+想彻底清掉 BepInEx，再删 BepInEx 文件夹、winhttp.dll、doorstop_config.ini、.doorstop_version。
 
 项目主页：https://github.com/shiluodeqiou/LOM_SaveSlotExpander-zh
 "@
