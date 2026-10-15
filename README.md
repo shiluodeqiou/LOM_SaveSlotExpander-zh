@@ -62,9 +62,9 @@ BepInEx 5 不能用。`BepInEx\core\BepInEx.Unity.Mono.dll` 存在就是 6 系�
 
 ## 安装
 
-1. 从 [`dist/`](dist/) 取 `LOM_SaveSlotExpander` 文件夹
-   （或运行 `build.ps1 -Deploy` 自行构建并部署）
-2. 整个文件夹复制到游戏的 `BepInEx\plugins\` 下
+1. 从 [Releases](https://github.com/shiluodeqiou/LOM_SaveSlotExpander-zh/releases) 下载最新版的 zip 并解压
+   （或者直接用仓库里的 [`dist/`](dist/) 文件夹，也可以运行 `build.ps1 -Deploy` 自行构建并部署）
+2. 把解压出来的 `LOM_SaveSlotExpander` 文件夹整个复制到游戏的 `BepInEx\plugins\` 下
 
 ```
 LegendOfMortal/

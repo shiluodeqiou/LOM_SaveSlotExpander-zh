@@ -6,6 +6,9 @@ obj/
 # 发布物里的 DLL 是特意纳入版本管理的（不要把 dist/ 整个忽略掉）
 dist/**/*.tmp
 
+# 打好的发布包走 GitHub Releases，不进版本库
+*.zip
+
 # Visual Studio / Rider
 .vs/
 .idea/
