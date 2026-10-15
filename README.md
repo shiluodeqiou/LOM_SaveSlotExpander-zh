@@ -409,6 +409,38 @@ dotnet run --project tools/PatchCheck -- "D:\Steam\steamapps\common\LegendOfMort
 
 ---
 
+## 发布新版本
+
+版本号跟着**发布日期**走，流程如下。
+
+1. 改代码后，把 `src/Plugin.cs` 里的 `VERSION` 和 `src/LOM_SaveSlotExpander.csproj` 里的
+   `<Version>` 都改成当天的日期（例如 `2026.10.16`），并在 `CHANGELOG.md` 里加上
+   对应标题（`## v2026.10.16`）和内容
+2. 构建、核对、部署一次过：
+
+   ```powershell
+   pwsh -File build.ps1 -Deploy -Verify
+   ```
+
+3. 最好照[运行时怎么看](#运行时怎么看)启动一次游戏，确认「实际生成存档位 N 个」对得上
+4. 提交并推送，然后打同名标签
+
+   ```bash
+   git add -A
+   git commit -m "……"
+   git push origin main
+   git tag -a v2026.10.16 -m "v2026.10.16"
+   git push origin v2026.10.16
+   ```
+
+5. 在 GitHub 的 [Releases](https://github.com/shiluodeqiou/LOM_SaveSlotExpander-zh/releases)
+   里以该标签新建 Release，正文从 `CHANGELOG.md` 摘取，附件上传把
+   `LOM_SaveSlotExpander` 文件夹打成的 zip（保证解压后能直接放进 `BepInEx\plugins\`）
+
+同一天里又改的话，日期不变，重新发一版即可。
+
+---
+
 ## 卸载
 
 删掉 `BepInEx\plugins\LOM_SaveSlotExpander\` 文件夹即可，不影响存档数据。
