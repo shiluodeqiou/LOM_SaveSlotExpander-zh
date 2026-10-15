@@ -17,16 +17,21 @@
 .PARAMETER Verify
     构建完成后，用 tools/PatchCheck 核对补丁目标是否还认得当前版本的游戏。
 
+.PARAMETER Package
+    构建完成后，生成可以直接解压到游戏根目录的发布包
+    （dist\LOM_SaveSlotExpander-zh-v<版本>.zip）。
+
 .EXAMPLE
     pwsh -File build.ps1
     pwsh -File build.ps1 -Deploy
-    pwsh -File build.ps1 -GameRoot "D:\Steam\steamapps\common\LegendOfMortal" -Deploy -Verify
+    pwsh -File build.ps1 -GameRoot "D:\Steam\steamapps\common\LegendOfMortal" -Deploy -Verify -Package
 #>
 [CmdletBinding()]
 param(
     [string]$GameRoot,
     [switch]$Deploy,
-    [switch]$Verify
+    [switch]$Verify,
+    [switch]$Package
 )
 
 $ErrorActionPreference = "Stop"
@@ -202,4 +207,64 @@ if ($Deploy) {
     if (-not (Test-Path $pluginDir)) { New-Item -ItemType Directory -Path $pluginDir -Force | Out-Null }
     Copy-Item $outDll -Destination $pluginDir -Force
     Write-Host "已部署   : $pluginDir" -ForegroundColor Green
+}
+
+# -------------------------------------------------------------------- 打包
+
+if ($Package) {
+    # 版本号直接从源码里取，免得手写两处对不上
+    $m = [regex]::Match((Get-Content (Join-Path $srcDir "Plugin.cs") -Raw), 'VERSION\s*=\s*"([^"]+)"')
+    if (-not $m.Success) { throw "无法从 src\Plugin.cs 里读出 VERSION。" }
+    $version = $m.Groups[1].Value
+
+    # 压缩包里直接带上 BepInEx 的目录结构，用户解压到游戏根目录就装好了
+    $stage = Join-Path $env:TEMP ("lom_sse_package_" + [Guid]::NewGuid().ToString("N"))
+    $stagePlugin = Join-Path $stage "BepInEx\plugins\LOM_SaveSlotExpander"
+    New-Item -ItemType Directory -Path $stagePlugin -Force | Out-Null
+    Copy-Item $outDll -Destination $stagePlugin -Force
+
+    $notice = @"
+LOM 存档位扩展（汉化版） $version
+《活侠传》存档位 20 → 999，并且可以给每个存档位写中文注释
+
+【安装】
+把压缩包里的 BepInEx 文件夹解压（与原文件夹合并）到《活侠传》的游戏根目录，
+也就是 Mortal.exe 所在的那个文件夹。解压后应当出现下面这个文件，这就是装对了：
+
+    BepInEx\plugins\LOM_SaveSlotExpander\LOM_SaveSlotExpander.dll
+
+游戏根目录在哪：Steam 库里右键《活侠传》→ 管理 → 浏览本地文件。
+
+【需要什么】
+BepInEx 6（Unity Mono 版）。如果游戏根目录下没有 BepInEx 文件夹，说明还没装，
+请先去 BepInEx 的发布页装好 6.x 的 Unity Mono 版本。
+不需要安装任何日语化 / 本地化 MOD。
+
+【用法】
+打开存档或读档界面，把鼠标移到（或用光标选中）存档位上：
+    F2    写注释，Enter 确定 / Esc 取消
+    F3    在「按编号」与「按存档时间」之间切换排序
+
+【设置】
+BepInEx\config\lom.zh.saveslotexpander.cfg，首次启动游戏后生成。
+注释内容存在存档文件夹里的 SaveSlotComments.ini，可以用文本编辑器直接改。
+
+【卸载】
+删掉 BepInEx\plugins\LOM_SaveSlotExpander 文件夹即可，不影响存档数据。
+
+项目主页：https://github.com/shiluodeqiou/LOM_SaveSlotExpander-zh
+"@
+    # 统一成 CRLF 再写：这是给 Windows 用户直接打开的文本
+    $notice = ($notice -replace "`r?`n", "`r`n")
+    # 带 BOM 写出，用记事本打开不会乱码
+    [System.IO.File]::WriteAllText((Join-Path $stage "安装说明.txt"), $notice,
+                                   (New-Object System.Text.UTF8Encoding($true)))
+
+    $zip = Join-Path $repo ("dist\LOM_SaveSlotExpander-zh-v" + $version + ".zip")
+    if (Test-Path $zip) { Remove-Item $zip -Force }
+    Compress-Archive -Path (Join-Path $stage "*") -DestinationPath $zip -Force
+    Remove-Item $stage -Recurse -Force
+
+    Write-Host "已打包   : $zip" -ForegroundColor Green
+    Write-Host "           （解压到游戏根目录即可，已含 BepInEx\plugins 目录结构）"
 }

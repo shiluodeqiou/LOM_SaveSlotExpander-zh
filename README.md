@@ -73,9 +73,13 @@ BepInEx 5 不能用。`BepInEx\core\BepInEx.Unity.Mono.dll` 存在就是 6 系�
 
 ## 安装
 
-1. 从 [Releases](https://github.com/shiluodeqiou/LOM_SaveSlotExpander-zh/releases) 下载最新版的 zip 并解压
-   （或者直接用仓库里的 [`dist/`](dist/) 文件夹，也可以运行 `build.ps1 -Deploy` 自行构建并部署）
-2. 把解压出来的 `LOM_SaveSlotExpander` 文件夹整个复制到游戏的 `BepInEx\plugins\` 下
+1. 从 [Releases](https://github.com/shiluodeqiou/LOM_SaveSlotExpander-zh/releases) 下载最新版的 zip
+2. 把压缩包里的 `BepInEx` 文件夹**解压到游戏根目录**（`Mortal.exe` 所在的那个文件夹），
+   与原文件夹合并即可 —— 压缩包里已经带好了目录结构，不需要自己去找 `BepInEx\plugins\`
+
+   游戏根目录在哪：在 Steam 库里右键《活侠传》→ 管理 → 浏览本地文件。
+
+   装好后应当是这个位置：
 
 ```
 LegendOfMortal/
@@ -87,7 +91,14 @@ LegendOfMortal/
 
 3. 启动游戏（首次启动会生成设置文件）
 
+压缩包里还附了一份 `安装说明.txt`，同样的内容。
+
+> **需要 BepInEx 6（Unity Mono 版）。** 如果游戏根目录下没有 `BepInEx` 文件夹，
+> 说明还没装 BepInEx，请先去它的发布页装好 6.x 的 Unity Mono 版本。
+>
 > 不要和**原版**（`lom.jp.saveslotexpander`）同时安装，两边会重复打补丁。
+
+自行构建的话：`build.ps1 -Deploy` 会直接装进游戏，`build.ps1 -Package` 会生成同样结构的发布包。
 
 ---
 
@@ -427,10 +438,10 @@ dotnet run --project tools/PatchCheck -- "D:\Steam\steamapps\common\LegendOfMort
 1. 改代码后，把 `src/Plugin.cs` 里的 `VERSION` 和 `src/LOM_SaveSlotExpander.csproj` 里的
    `<Version>` 都改成当天的日期（例如 `2026.10.16`），并在 `CHANGELOG.md` 里加上
    对应标题（`## v2026.10.16`）和内容
-2. 构建、核对、部署一次过：
+2. 构建、核对、部署、打包一次过：
 
    ```powershell
-   pwsh -File build.ps1 -Deploy -Verify
+   pwsh -File build.ps1 -Deploy -Verify -Package
    ```
 
 3. 最好照[运行时怎么看](#运行时怎么看)启动一次游戏，确认「实际生成存档位 N 个」对得上
@@ -445,8 +456,12 @@ dotnet run --project tools/PatchCheck -- "D:\Steam\steamapps\common\LegendOfMort
    ```
 
 5. 在 GitHub 的 [Releases](https://github.com/shiluodeqiou/LOM_SaveSlotExpander-zh/releases)
-   里以该标签新建 Release，正文从 `CHANGELOG.md` 摘取，附件上传把
-   `LOM_SaveSlotExpander` 文件夹打成的 zip（保证解压后能直接放进 `BepInEx\plugins\`）
+   里以该标签新建 Release，正文从 `CHANGELOG.md` 摘取，附件上传 `dist/` 下生成的
+   `LOM_SaveSlotExpander-zh-v<版本>.zip`
+
+**压缩包的目录结构由 `-Package` 负责**，里面是 `BepInEx\plugins\LOM_SaveSlotExpander\`
+再加上一份 `安装说明.txt`。用户解压到游戏根目录就装好了，不需要自己找 `BepInEx\plugins\`。
+打包时版本号从 `src/Plugin.cs` 里读，所以不会和代码里的版本对不上。
 
 同一天里又改的话，日期不变，重新发一版即可。
 
