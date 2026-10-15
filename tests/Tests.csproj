@@ -1,0 +1,33 @@
+<!--
+  保存格式的往返测试。
+
+  IniFile 和 SlotMeta 既不依赖游戏也不依赖 Unity，
+  所以在没有游戏的环境（例如 CI 的公共运行器）里也能直接跑。
+
+  运行方法见 README 的「测试」一节。
+  （XML 注释里不能出现连续的两个减号，所以这里不写命令行）
+-->
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>9.0</LangVersion>
+    <AssemblyName>LOM_SaveSlotExpander.Tests</AssemblyName>
+    <RootNamespace>LOM.SaveSlotExpander.Tests</RootNamespace>
+    <Nullable>disable</Nullable>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+
+  <!-- 为了 Linux 运行器也能用，分隔符统一用 / 并加 Link
+       （用 \ 分隔或引用工程外的文件时，Unix 的 MSBuild 有时解析不了） -->
+  <ItemGroup>
+    <Compile Include="../src/IniFile.cs" Link="IniFile.cs" />
+    <Compile Include="../src/SlotMeta.cs" Link="SlotMeta.cs" />
+    <Compile Include="../src/SlotOrder.cs" Link="SlotOrder.cs" />
+    <Compile Include="PersistenceTests.cs" />
+    <Compile Include="SortTests.cs" />
+  </ItemGroup>
+
+</Project>

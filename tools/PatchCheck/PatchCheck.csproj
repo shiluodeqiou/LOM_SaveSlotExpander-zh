@@ -1,0 +1,23 @@
+<!--
+  静态核对工具。用 Mono.Cecil 读程序集，不需要启动游戏。
+
+  运行方法见 README 的「测试」一节。
+  （XML 注释里不能出现连续的两个减号，所以这里不写命令行）
+-->
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>9.0</LangVersion>
+    <AssemblyName>LOM_SaveSlotExpander.PatchCheck</AssemblyName>
+    <RootNamespace>LOM.SaveSlotExpander.PatchCheck</RootNamespace>
+    <Nullable>disable</Nullable>
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Mono.Cecil" Version="0.11.6" />
+  </ItemGroup>
+
+</Project>

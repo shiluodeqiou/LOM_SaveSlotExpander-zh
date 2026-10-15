@@ -1,0 +1,96 @@
+<!--
+  有 .NET SDK 时用的工程文件。
+  游戏位置通过 GameRoot 属性传入。
+
+    dotnet build src/LOM_SaveSlotExpander.csproj -c Release -p:GameRoot="D:\Steam\steamapps\common\LegendOfMortal"
+
+  没有 SDK 的环境请用仓库根目录的 build.ps1（它直接调用 Visual Studio 自带的
+  Roslyn，不需要 SDK）。
+-->
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net472</TargetFramework>
+    <LangVersion>9.0</LangVersion>
+    <AssemblyName>LOM_SaveSlotExpander</AssemblyName>
+    <RootNamespace>LOM.SaveSlotExpander</RootNamespace>
+    <Version>2026.10.16</Version>
+    <DebugType>none</DebugType>
+    <Deterministic>true</Deterministic>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(GameRoot)' == ''">
+    <GameRoot>C:\Program Files (x86)\Steam\steamapps\common\LegendOfMortal</GameRoot>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <ManagedDir>$(GameRoot)\Mortal_Data\Managed</ManagedDir>
+    <BepInExDir>$(GameRoot)\BepInEx\core</BepInExDir>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="UnityEngine">
+      <HintPath>$(ManagedDir)\UnityEngine.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.CoreModule">
+      <HintPath>$(ManagedDir)\UnityEngine.CoreModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.UI">
+      <HintPath>$(ManagedDir)\UnityEngine.UI.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.UIModule">
+      <HintPath>$(ManagedDir)\UnityEngine.UIModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.TextRenderingModule">
+      <HintPath>$(ManagedDir)\UnityEngine.TextRenderingModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.InputLegacyModule">
+      <HintPath>$(ManagedDir)\UnityEngine.InputLegacyModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Unity.InputSystem">
+      <HintPath>$(ManagedDir)\Unity.InputSystem.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Mortal.Core">
+      <HintPath>$(ManagedDir)\Mortal.Core.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+
+    <Reference Include="BepInEx.Core">
+      <HintPath>$(BepInExDir)\BepInEx.Core.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="BepInEx.Unity.Mono">
+      <HintPath>$(BepInExDir)\BepInEx.Unity.Mono.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="BepInEx.Unity.Common">
+      <HintPath>$(BepInExDir)\BepInEx.Unity.Common.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="0Harmony">
+      <HintPath>$(BepInExDir)\0Harmony.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+  <Target Name="VerifyGameRoot" BeforeTargets="BeforeBuild">
+    <Error Condition="!Exists('$(ManagedDir)\Mortal.Core.dll')"
+           Text="在 $(GameRoot) 里找不到《活侠传》。请用 -p:GameRoot=&quot;...&quot; 指定正确的路径。" />
+    <Error Condition="!Exists('$(BepInExDir)\BepInEx.Unity.Mono.dll')"
+           Text="在 $(BepInExDir) 里找不到 BepInEx 6（Unity Mono 版）。" />
+  </Target>
+
+</Project>

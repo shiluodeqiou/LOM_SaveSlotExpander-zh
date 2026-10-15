@@ -1,0 +1,19 @@
+# 构建中间产物
+bin/
+obj/
+*.pdb
+
+# 发布物里的 DLL 是特意纳入版本管理的（不要把 dist/ 整个忽略掉）
+dist/**/*.tmp
+
+# Visual Studio / Rider
+.vs/
+.idea/
+*.user
+*.suo
+*.userprefs
+
+# 操作系统
+Thumbs.db
+desktop.ini
+.DS_Store
