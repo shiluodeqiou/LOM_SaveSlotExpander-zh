@@ -479,7 +479,9 @@ pwsh -File build.ps1 -GameRoot "D:\Steam\steamapps\common\LegendOfMortal"
 # 然后比较 dist\LOM_SaveSlotExpander\LOM_SaveSlotExpander.dll 与包内同名文件的哈希
 ```
 
-每个 Release 的说明里都写了该版本附件的 SHA256。
+每个 Release 的说明里都写了该版本 **DLL 的 SHA256**，与它比对即可。
+（注意比对的是 DLL，不是压缩包本身——zip 里含文件时间戳，重新打包时字节会变，
+但里面 DLL 的哈希是稳定的。）
 
 ---
 
