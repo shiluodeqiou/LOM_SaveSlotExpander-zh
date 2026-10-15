@@ -465,6 +465,22 @@ dotnet run --project tools/PatchCheck -- "D:\Steam\steamapps\common\LegendOfMort
 
 同一天里又改的话，日期不变，重新发一版即可。
 
+### 校验发布包
+
+本工程的构建是**可复现**的：在同一份源码上构建，产出的 DLL 字节完全一致
+（`.csproj` 里关掉了把 git 提交号写进 `AssemblyInformationalVersion` 的行为，
+否则每次提交都会让产物变化，发布包就没法跟源码对账）。
+
+所以你可以自己核对下载到的发布包：
+
+```powershell
+git checkout v2026.10.16
+pwsh -File build.ps1 -GameRoot "D:\Steam\steamapps\common\LegendOfMortal"
+# 然后比较 dist\LOM_SaveSlotExpander\LOM_SaveSlotExpander.dll 与包内同名文件的哈希
+```
+
+每个 Release 的说明里都写了该版本附件的 SHA256。
+
 ---
 
 ## 卸载
