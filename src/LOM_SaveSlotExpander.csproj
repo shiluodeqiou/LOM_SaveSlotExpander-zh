@@ -17,6 +17,10 @@
     <Version>2026.10.16</Version>
     <DebugType>none</DebugType>
     <Deterministic>true</Deterministic>
+    <!-- .NET SDK 默认会把当前 git 提交号拼进 AssemblyInformationalVersion，
+         于是同一个源码在不同提交上构建出来的 DLL 都不一样，发布包也就没法跟源码对账。
+         这里关掉，保证同一个源码构建出来的字节完全一致。 -->
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
   </PropertyGroup>
