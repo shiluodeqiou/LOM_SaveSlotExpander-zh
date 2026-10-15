@@ -20,6 +20,11 @@
 .PARAMETER Package
     构建完成后，生成可以直接解压到游戏根目录的发布包
     （dist\LOM_SaveSlotExpander-zh-v<版本>.zip）。
+    包里会一并带上 BepInEx 的运行时文件，所以只装这一个 mod 的用户也能直接用。
+
+.PARAMETER BepInExSource
+    打包时从哪里取 BepInEx 运行时。默认就用 -GameRoot 指定的游戏目录
+    （那里本来就是一份装好的 BepInEx）。只有想改用别处的干净副本时才需要指定。
 
 .EXAMPLE
     pwsh -File build.ps1
@@ -31,7 +36,8 @@ param(
     [string]$GameRoot,
     [switch]$Deploy,
     [switch]$Verify,
-    [switch]$Package
+    [switch]$Package,
+    [string]$BepInExSource
 )
 
 $ErrorActionPreference = "Stop"
@@ -217,28 +223,91 @@ if ($Package) {
     if (-not $m.Success) { throw "无法从 src\Plugin.cs 里读出 VERSION。" }
     $version = $m.Groups[1].Value
 
-    # 压缩包里直接带上 BepInEx 的目录结构，用户解压到游戏根目录就装好了
+    # BepInEx 运行时的来源。默认用游戏目录里的那份，它本来就是装好的
+    if (-not $BepInExSource) { $BepInExSource = $GameRoot }
+    if (-not (Test-Path $BepInExSource)) { throw "BepInEx 来源目录不存在: $BepInExSource" }
+
+    # ---- 只取 BepInEx 自己的运行时文件 ----
+    # 这里必须用白名单而不是"排除法"：游戏目录的 BepInEx\plugins 和 BepInEx\config
+    # 里放着别人的 mod 和别人的配置，一旦被打进发布包就是事故。
+    # 这份清单与官方 BepInEx 6 Unity.Mono 发布包的内容一一对应。
+    $bepRootFiles = @("winhttp.dll", "doorstop_config.ini", ".doorstop_version", "changelog.txt")
+    $bepDirs      = @("BepInEx\core")
+
+    foreach ($f in $bepRootFiles) {
+        if (-not (Test-Path (Join-Path $BepInExSource $f))) {
+            throw "在 $BepInExSource 里找不到 BepInEx 的 $f，无法打出「解压即用」的包。"
+        }
+    }
+    foreach ($d in $bepDirs) {
+        if (-not (Test-Path (Join-Path $BepInExSource $d))) {
+            throw "在 $BepInExSource 里找不到 BepInEx 的 $d 目录。"
+        }
+    }
+
     $stage = Join-Path $env:TEMP ("lom_sse_package_" + [Guid]::NewGuid().ToString("N"))
+    New-Item -ItemType Directory -Path $stage -Force | Out-Null
+
+    # 1) BepInEx 运行时（让只装这一个 mod 的用户也能直接跑起来）
+    foreach ($f in $bepRootFiles) {
+        Copy-Item (Join-Path $BepInExSource $f) -Destination $stage -Force
+    }
+    foreach ($d in $bepDirs) {
+        $dst = Join-Path $stage $d
+        New-Item -ItemType Directory -Path $dst -Force | Out-Null
+        Copy-Item (Join-Path $BepInExSource "$d\*") -Destination $dst -Recurse -Force
+    }
+
+    # 2) 本 mod 本体
     $stagePlugin = Join-Path $stage "BepInEx\plugins\LOM_SaveSlotExpander"
     New-Item -ItemType Directory -Path $stagePlugin -Force | Out-Null
     Copy-Item $outDll -Destination $stagePlugin -Force
 
+    # 3) 第三方组件的许可（BepInEx 与 Doorstop 都是 LGPL-2.1，随包分发必须带上）
+    $licDir = Join-Path $stage "第三方许可"
+    New-Item -ItemType Directory -Path $licDir -Force | Out-Null
+    foreach ($lic in @("BepInEx-LICENSE.txt", "Doorstop-LICENSE.txt")) {
+        $src = Join-Path $repo ("third_party\" + $lic)
+        if (Test-Path $src) { Copy-Item $src -Destination $licDir -Force }
+    }
+
+    # 包里自带的这个 BepInEx 是哪个版本，写进说明里
+    $bepVer = "6.x"
+    try {
+        $vi = (Get-Item (Join-Path $BepInExSource "BepInEx\core\BepInEx.Core.dll")).VersionInfo
+        foreach ($cand in @($vi.ProductVersion, $vi.FileVersion)) {
+            if ($cand) { $bepVer = ($cand -split "\+")[0]; break }   # 去掉 "+提交号" 那段
+        }
+    } catch { }
+    $doorstopVer = "未知"
+    try { $doorstopVer = (Get-Content (Join-Path $BepInExSource ".doorstop_version") -Raw).Trim() } catch { }
+
+    # 4) 安装说明
     $notice = @"
 LOM 存档位扩展（汉化版） $version
 《活侠传》存档位 20 → 999，并且可以给每个存档位写中文注释
 
-【安装】
-把压缩包里的 BepInEx 文件夹解压（与原文件夹合并）到《活侠传》的游戏根目录，
-也就是 Mortal.exe 所在的那个文件夹。解压后应当出现下面这个文件，这就是装对了：
+【安装】只要两步
+1. 在 Steam 库里右键《活侠传》→ 管理 → 浏览本地文件，打开游戏根目录
+   （就是 Mortal.exe 所在的那个文件夹）
+2. 把本压缩包的**全部内容**解压进去，与原文件夹合并、提示覆盖就选覆盖
 
+解压后应当出现下面这些文件，这就是装对了：
+
+    winhttp.dll
+    doorstop_config.ini
+    BepInEx\core\BepInEx.Unity.Mono.Preloader.dll
     BepInEx\plugins\LOM_SaveSlotExpander\LOM_SaveSlotExpander.dll
 
-游戏根目录在哪：Steam 库里右键《活侠传》→ 管理 → 浏览本地文件。
+【关于 BepInEx】
+本包已经自带 BepInEx 运行时（BepInEx $bepVer / Doorstop $doorstopVer，LGPL-2.1），
+所以就算你之前什么 mod 都没装过，解压完也能直接玩。不需要再去别处下载。
 
-【需要什么】
-BepInEx 6（Unity Mono 版）。如果游戏根目录下没有 BepInEx 文件夹，说明还没装，
-请先去 BepInEx 的发布页装好 6.x 的 Unity Mono 版本。
-不需要安装任何日语化 / 本地化 MOD。
+如果你已经装过 BepInEx，直接覆盖一般也没问题。但假如你那份比本包里的新，
+建议只解压 BepInEx\plugins 这个文件夹，免得把新版换成旧版。
+
+其它 mod 互不影响：各家的插件各自放在 BepInEx\plugins 下自己的文件夹里，
+安装新 mod 时继续往 BepInEx\plugins 里解压即可。
 
 【用法】
 打开存档或读档界面，把鼠标移到（或用光标选中）存档位上：
@@ -250,7 +319,9 @@ BepInEx\config\lom.zh.saveslotexpander.cfg，首次启动游戏后生成。
 注释内容存在存档文件夹里的 SaveSlotComments.ini，可以用文本编辑器直接改。
 
 【卸载】
-删掉 BepInEx\plugins\LOM_SaveSlotExpander 文件夹即可，不影响存档数据。
+只删 BepInEx\plugins\LOM_SaveSlotExpander 文件夹，不影响存档，
+其它 mod 也照常。想彻底清掉 BepInEx 的话再删 BepInEx 文件夹、winhttp.dll、
+doorstop_config.ini、.doorstop_version。
 
 项目主页：https://github.com/shiluodeqiou/LOM_SaveSlotExpander-zh
 "@
@@ -260,11 +331,44 @@ BepInEx\config\lom.zh.saveslotexpander.cfg，首次启动游戏后生成。
     [System.IO.File]::WriteAllText((Join-Path $stage "安装说明.txt"), $notice,
                                    (New-Object System.Text.UTF8Encoding($true)))
 
+    # 5) 第三方组件说明
+    $thirdParty = @"
+本发布包中包含以下第三方组件，它们不是本项目（LOM 存档位扩展 汉化版）的一部分，
+随包分发只是为了让你解压一次就能直接使用。完整许可原文见「第三方许可」文件夹。
+
+  BepInEx（含 Harmony / MonoMod / Mono.Cecil 等）
+      版本  : $bepVer
+      许可  : GNU LGPL-2.1
+      来源  : https://github.com/BepInEx/BepInEx
+
+  UnityDoorstop
+      版本  : $doorstopVer
+      许可  : GNU LGPL-2.1
+      来源  : https://github.com/NeighTools/UnityDoorstop
+
+本项目的源码与许可（MIT，继承自原版 LOM_SaveSlotExpander）：
+  https://github.com/shiluodeqiou/LOM_SaveSlotExpander-zh
+原版：https://gitlab.com/ame-chan/lom_saveslotexpander
+"@
+    $thirdParty = ($thirdParty -replace "`r?`n", "`r`n")
+    [System.IO.File]::WriteAllText((Join-Path $stage "第三方组件与许可.txt"), $thirdParty,
+                                   (New-Object System.Text.UTF8Encoding($true)))
+
+    # 6) 压缩。安全校验：确认没有把别人的 mod / 配置带进去
+    $strayPlugins = @(Get-ChildItem (Join-Path $stage "BepInEx\plugins") -Directory |
+                      Where-Object { $_.Name -ne "LOM_SaveSlotExpander" })
+    $strayConfigs = @(Get-ChildItem (Join-Path $stage "BepInEx\config") -File -EA SilentlyContinue)
+    if ($strayPlugins.Count -gt 0 -or $strayConfigs.Count -gt 0) {
+        throw "暂存目录里混进了别的 mod 或配置，已中止。plugins: $($strayPlugins.Name -join ', ')"
+    }
+
+    $fileCount = @(Get-ChildItem $stage -Recurse -File -Force).Count
+
     $zip = Join-Path $repo ("dist\LOM_SaveSlotExpander-zh-v" + $version + ".zip")
     if (Test-Path $zip) { Remove-Item $zip -Force }
     Compress-Archive -Path (Join-Path $stage "*") -DestinationPath $zip -Force
     Remove-Item $stage -Recurse -Force
 
     Write-Host "已打包   : $zip" -ForegroundColor Green
-    Write-Host "           （解压到游戏根目录即可，已含 BepInEx\plugins 目录结构）"
+    Write-Host ("           共 {0} 个文件，自带 BepInEx {1}，解压到游戏根目录即可" -f $fileCount, $bepVer)
 }

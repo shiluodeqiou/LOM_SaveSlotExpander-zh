@@ -73,17 +73,22 @@ BepInEx 5 不能用。`BepInEx\core\BepInEx.Unity.Mono.dll` 存在就是 6 系�
 
 ## 安装
 
+**只要两步，不需要事先装任何东西。**
+
 1. 从 [Releases](https://github.com/shiluodeqiou/LOM_SaveSlotExpander-zh/releases) 下载最新版的 zip
-2. 把压缩包里的 `BepInEx` 文件夹**解压到游戏根目录**（`Mortal.exe` 所在的那个文件夹），
-   与原文件夹合并即可 —— 压缩包里已经带好了目录结构，不需要自己去找 `BepInEx\plugins\`
+2. 在 Steam 库里右键《活侠传》→ 管理 → 浏览本地文件，打开游戏根目录（`Mortal.exe` 所在的那层），
+   把压缩包里的**全部内容**解压进去，与原文件夹合并、提示覆盖就选覆盖
 
-   游戏根目录在哪：在 Steam 库里右键《活侠传》→ 管理 → 浏览本地文件。
-
-   装好后应当是这个位置：
+装好后应当是这个样子：
 
 ```
 LegendOfMortal/
+├── Mortal.exe
+├── winhttp.dll                                  ← 随包附带
+├── doorstop_config.ini                          ← 随包附带
+├── .doorstop_version                            ← 随包附带
 └── BepInEx/
+    ├── core/                                    ← 随包附带（BepInEx 运行时本体）
     └── plugins/
         └── LOM_SaveSlotExpander/
             └── LOM_SaveSlotExpander.dll
@@ -91,12 +96,22 @@ LegendOfMortal/
 
 3. 启动游戏（首次启动会生成设置文件）
 
-压缩包里还附了一份 `安装说明.txt`，同样的内容。
+压缩包里还附了 `安装说明.txt` 和 `第三方组件与许可.txt`，同样的内容。
 
-> **需要 BepInEx 6（Unity Mono 版）。** 如果游戏根目录下没有 `BepInEx` 文件夹，
-> 说明还没装 BepInEx，请先去它的发布页装好 6.x 的 Unity Mono 版本。
->
-> 不要和**原版**（`lom.jp.saveslotexpander`）同时安装，两边会重复打补丁。
+### 关于里面自带的 BepInEx
+
+包里已经带好了 **BepInEx 6（Unity Mono 版，`6.0.0-be.692`）以及 Doorstop 4.3.0**，
+所以就算你之前一个 mod 都没装过，解压完也能直接玩，不用再去别处下载。
+包内文件与官方 BepInEx 发布包一一对应，一个不缺。
+
+- **已经装过 BepInEx 的用户**：直接覆盖一般没问题；如果你那份比包里的新，
+  建议只解压 `BepInEx\plugins` 这一部分，免得把新版换成旧版。
+- **装其它 mod**：互不影响。各家插件各自放在 `BepInEx\plugins` 下自己的文件夹里，
+  继续往 `BepInEx\plugins` 里解压即可。
+- BepInEx 与 Doorstop 是 LGPL-2.1 授权的第三方组件，许可原文放在包里的
+  `第三方许可\` 文件夹，来源见 `第三方组件与许可.txt`。
+
+> 本 mod 不要和**原版**（`lom.jp.saveslotexpander`）同时安装，两边会重复打补丁。
 
 自行构建的话：`build.ps1 -Deploy` 会直接装进游戏，`build.ps1 -Package` 会生成同样结构的发布包。
 
@@ -459,9 +474,18 @@ dotnet run --project tools/PatchCheck -- "D:\Steam\steamapps\common\LegendOfMort
    里以该标签新建 Release，正文从 `CHANGELOG.md` 摘取，附件上传 `dist/` 下生成的
    `LOM_SaveSlotExpander-zh-v<版本>.zip`
 
-**压缩包的目录结构由 `-Package` 负责**，里面是 `BepInEx\plugins\LOM_SaveSlotExpander\`
-再加上一份 `安装说明.txt`。用户解压到游戏根目录就装好了，不需要自己找 `BepInEx\plugins\`。
-打包时版本号从 `src/Plugin.cs` 里读，所以不会和代码里的版本对不上。
+**压缩包由 `-Package` 负责生成**：里面是完整目录结构（`BepInEx\plugins\LOM_SaveSlotExpander\`）、
+BepInEx 运行时（从 `-GameRoot` 或 `-BepInExSource` 指定的目录里按白名单取，见下）、
+以及两份说明和第三方许可。用户解压到游戏根目录就装好了。
+
+打包时会做两件事，避免出错：
+
+- **按白名单取 BepInEx 文件**（`winhttp.dll`、`doorstop_config.ini`、`.doorstop_version`、
+  `changelog.txt`、`BepInEx\core\*`）。绝不用"排除法"，因为游戏目录的 `BepInEx\plugins`
+  和 `BepInEx\config` 里放着别人的 mod 和别人的配置，混进发布包就是事故。
+- **打包后校验**，一旦发现暂存目录里出现别的插件或任何配置文件就直接中止。
+
+顺带一提，`MonoBleedingEdge` 不需要打包：它是游戏自带的（随游戏更新一起变动）。
 
 同一天里又改的话，日期不变，重新发一版即可。
 
